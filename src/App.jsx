@@ -11,7 +11,10 @@ function App() {
   }, []);
 
   const fetchTodos = async () => {
-    const { data, error } = await supabase.from("TodoList").select("*");
+    const { data, error } = await supabase
+      .from("TodoList")
+      .select("*")
+      .order("id", { ascending: true });
     if (error) {
       console.log("Error fetching: ", error);
     } else {
