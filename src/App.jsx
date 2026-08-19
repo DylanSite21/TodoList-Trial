@@ -3,30 +3,138 @@ import "./App.css";
 import supabase from "./supabase-client";
 
 function App() {
+  const [session, setSession] = useState(null);
+  const [isRegister, setIsRegister] = useState(false);
+
+  // Auth form
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+
+  // Todo
   const [todoList, setTodoList] = useState([]);
   const [newTodo, setNewTodo] = useState("");
 
   useEffect(() => {
-    fetchTodos();
+    getSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (session) {
+      fetchTodos();
+    } else {
+      setTodoList([]);
+    }
+  }, [session]);
+
+  // =========================
+  // AUTH
+  // =========================
+
+  const getSession = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    setSession(session);
+  };
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+
+    if (isRegister) {
+      // Register
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      // Buat profile
+      if (user) {
+        const { error: profileError } = await supabase.from("profiles").insert({
+          id: user.id,
+          name: name,
+        });
+
+        if (profileError) {
+          console.log("Error creating profile:", profileError);
+          return;
+        }
+      }
+
+      alert("Register berhasil!");
+
+      setEmail("");
+      setPassword("");
+      setName("");
+      setIsRegister(false);
+    } else {
+      // Login
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      setEmail("");
+      setPassword("");
+    }
+  };
+
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.log("Error logout:", error);
+    }
+  };
+
+  // =========================
+  // TODO
+  // =========================
 
   const fetchTodos = async () => {
     const { data, error } = await supabase
       .from("TodoList")
       .select("*")
       .order("id", { ascending: true });
+
     if (error) {
-      console.log("Error fetching: ", error);
+      console.log("Error fetching:", error);
     } else {
       setTodoList(data);
     }
   };
 
   const addTodo = async () => {
+    if (!newTodo.trim()) return;
+
     const newTodoData = {
       name: newTodo,
       isCompleted: false,
+      user_id: session.user.id,
     };
+
     const { data, error } = await supabase
       .from("TodoList")
       .insert([newTodoData])
@@ -34,7 +142,9 @@ function App() {
       .single();
 
     if (error) {
-      console.log("Error adding todo: ", error);
+      console.error("Error adding todo:", error);
+      alert(error.message);
+      return;
     } else {
       setTodoList((prev) => [...prev, data]);
       setNewTodo("");
@@ -42,33 +152,111 @@ function App() {
   };
 
   const completeTask = async (id, isCompleted) => {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("TodoList")
       .update({ isCompleted: !isCompleted })
       .eq("id", id);
 
     if (error) {
-      console.log("error toggling task: ", error);
+      console.log("Error toggling task:", error);
     } else {
-      const updatedTodoList = todoList.map((todo) =>
-        todo.id === id ? { ...todo, isCompleted: !isCompleted } : todo,
+      setTodoList((prev) =>
+        prev.map((todo) =>
+          todo.id === id ? { ...todo, isCompleted: !isCompleted } : todo,
+        ),
       );
-      setTodoList(updatedTodoList);
     }
   };
 
   const deleteTask = async (id) => {
-    const { data, error } = await supabase
-      .from("TodoList")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("TodoList").delete().eq("id", id);
 
     if (error) {
-      console.log("error deleting task: ", error);
+      console.log("Error deleting task:", error);
     } else {
       setTodoList((prev) => prev.filter((todo) => todo.id !== id));
     }
   };
+
+  // =========================
+  // LOGIN / REGISTER PAGE
+  // =========================
+
+  if (!session) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <h1>{isRegister ? "Create Account" : "Welcome Back"}</h1>
+
+          <p className="auth-subtitle">
+            {isRegister
+              ? "Create your account to manage your tasks."
+              : "Login to manage your daily tasks."}
+          </p>
+
+          <form onSubmit={handleAuth}>
+            {isRegister && (
+              <div className="form-group">
+                <label>Name</label>
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Password</label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                required
+              />
+            </div>
+
+            <button className="auth-button" type="submit">
+              {isRegister ? "Register" : "Login"}
+            </button>
+          </form>
+
+          <div className="auth-switch">
+            {isRegister ? (
+              <>
+                Already have an account?{" "}
+                <button onClick={() => setIsRegister(false)}>Login</button>
+              </>
+            ) : (
+              <>
+                Don't have an account?{" "}
+                <button onClick={() => setIsRegister(true)}>Register</button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================
+  // TODO PAGE
+  // =========================
 
   return (
     <div className="todo-container">
@@ -78,6 +266,9 @@ function App() {
             <p className="todo-label">MY TASKS</p>
             <h1>Todo List</h1>
             <p className="todo-subtitle">Manage your daily tasks easily.</p>
+            <div>
+              <button onClick={logout}>Logout</button>
+            </div>
           </div>
 
           <div className="todo-count">
