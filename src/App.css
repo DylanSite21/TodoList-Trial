@@ -267,7 +267,7 @@ input {
   border-radius: 10px;
   background: transparent;
   cursor: pointer;
-  opacity: 0;
+  opacity: 1;
   transition: 0.2s ease;
 }
 
