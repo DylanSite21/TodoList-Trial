@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import supabase from "../supabase-client";
+import "../css/Login.css";
 
 function Login() {
   const navigate = useNavigate();
@@ -29,17 +30,20 @@ function Login() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h1>Welcome Back</h1>
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-header">
+          <h1>Welcome Back</h1>
 
-        <p className="auth-subtitle">Login to manage your daily tasks.</p>
+          <p>Login to manage your daily tasks.</p>
+        </div>
 
-        <form onSubmit={handleLogin}>
-          <div className="form-group">
-            <label>Email</label>
+        <form className="login-form" onSubmit={handleLogin}>
+          <div className="login-form-group">
+            <label htmlFor="email">Email</label>
 
             <input
+              id="email"
               type="email"
               placeholder="you@example.com"
               value={email}
@@ -48,10 +52,11 @@ function Login() {
             />
           </div>
 
-          <div className="form-group">
-            <label>Password</label>
+          <div className="login-form-group">
+            <label htmlFor="password">Password</label>
 
             <input
+              id="password"
               type="password"
               placeholder="••••••••"
               value={password}
@@ -61,12 +66,12 @@ function Login() {
             />
           </div>
 
-          <button className="auth-button" type="submit">
+          <button className="login-button" type="submit">
             Login
           </button>
         </form>
 
-        <div className="auth-switch">
+        <div className="login-switch">
           Don't have an account? <Link to="/register">Register</Link>
         </div>
       </div>

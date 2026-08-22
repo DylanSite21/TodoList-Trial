@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import supabase from "../supabase-client";
+import "../css/Register.css";
 
 function Register() {
   const navigate = useNavigate();
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -34,6 +35,7 @@ function Register() {
 
       if (profileError) {
         console.log("Error creating profile:", profileError);
+
         alert(profileError.message);
         return;
       }
@@ -41,27 +43,28 @@ function Register() {
 
     alert("Register berhasil!");
 
+    setName("");
     setEmail("");
     setPassword("");
-    setName("");
 
     navigate("/login");
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h1>Create Account</h1>
+    <div className="register-page">
+      <div className="register-card">
+        <div className="register-header">
+          <h1>Create Account</h1>
 
-        <p className="auth-subtitle">
-          Create your account to manage your tasks.
-        </p>
+          <p>Create your account to manage your tasks.</p>
+        </div>
 
-        <form onSubmit={handleRegister}>
-          <div className="form-group">
-            <label>Name</label>
+        <form className="register-form" onSubmit={handleRegister}>
+          <div className="register-form-group">
+            <label htmlFor="name">Name</label>
 
             <input
+              id="name"
               type="text"
               placeholder="Your name"
               value={name}
@@ -70,10 +73,11 @@ function Register() {
             />
           </div>
 
-          <div className="form-group">
-            <label>Email</label>
+          <div className="register-form-group">
+            <label htmlFor="email">Email</label>
 
             <input
+              id="email"
               type="email"
               placeholder="you@example.com"
               value={email}
@@ -82,10 +86,11 @@ function Register() {
             />
           </div>
 
-          <div className="form-group">
-            <label>Password</label>
+          <div className="register-form-group">
+            <label htmlFor="password">Password</label>
 
             <input
+              id="password"
               type="password"
               placeholder="••••••••"
               value={password}
@@ -95,12 +100,12 @@ function Register() {
             />
           </div>
 
-          <button className="auth-button" type="submit">
+          <button className="register-button" type="submit">
             Register
           </button>
         </form>
 
-        <div className="auth-switch">
+        <div className="register-switch">
           Already have an account? <Link to="/login">Login</Link>
         </div>
       </div>
